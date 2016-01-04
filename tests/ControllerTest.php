@@ -1,5 +1,7 @@
 <?php
 
+use Docnet\JAPI\Http\Request;
+
 require_once('Controllers/Example.php');
 require_once('Controllers/Headers.php');
 require_once('Controllers/Exceptional.php');
@@ -11,15 +13,15 @@ class ControllerTest extends PHPUnit_Framework_TestCase
 
     public function testBasicResponse()
     {
-        $obj_controller = new Example();
+        $obj_controller = new Example(new Request());
         $obj_controller->dispatch();
-        $this->assertEquals($obj_controller->getResponse(), ['test' => TRUE]);
+        $this->assertEquals($obj_controller->getResponse(), ['test' => true]);
     }
 
     public function testQuery()
     {
         $_GET['input1'] = 'value1';
-        $obj_controller = new \Hello\World();
+        $obj_controller = new \Hello\World(new Request());
         $obj_controller->dispatch();
         $obj_response = $obj_controller->getResponse();
         $this->assertEquals($obj_response['input1'], 'value1');
@@ -28,7 +30,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
     public function testPost()
     {
         $_POST['input2'] = 'value2';
-        $obj_controller = new \Hello\World();
+        $obj_controller = new \Hello\World(new Request());
         $obj_controller->dispatch();
         $obj_response = $obj_controller->getResponse();
         $this->assertEquals($obj_response['input2'], 'value2');
@@ -38,7 +40,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
     {
         $_GET['input3'] = 'value3';
         $_POST['input4'] = 'value4';
-        $obj_controller = new \Hello\World();
+        $obj_controller = new \Hello\World(new Request());
         $obj_controller->dispatch();
         $obj_response = $obj_controller->getResponse();
         $this->assertEquals($obj_response['input3'], 'value3');
@@ -49,7 +51,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
     {
         $_GET['input4'] = 'value4-get';
         $_POST['input4'] = 'value4-post';
-        $obj_controller = new \Hello\World();
+        $obj_controller = new \Hello\World(new Request());
         $obj_controller->dispatch();
         $obj_response = $obj_controller->getResponse();
         $this->assertEquals($obj_response['input4'], 'value4-get');
@@ -57,26 +59,35 @@ class ControllerTest extends PHPUnit_Framework_TestCase
 
     public function testCliHeaders()
     {
-        $_SERVER['HTTP_SOME_HEADER'] = TRUE;
-        $obj_controller = new Headers();
+        $_SERVER['HTTP_SOME_HEADER'] = true;
+        $obj_controller = new Headers(new Request());
         $obj_controller->dispatch();
-        $this->assertEquals($obj_controller->getResponse(), ['Some-Header' => TRUE]);
+        $this->assertEquals($obj_controller->getResponse(), ['Some-Header' => true]);
     }
 
     public function testJsonBodyParam()
     {
-        $str_json = '{"json_param": "param_found"}';
-        $obj_controller = new \JsonParams();
-        $obj_controller->setBody($str_json);
+        // Create a stub request.
+        $obj_request_mock = $this->getMockBuilder(Request::class)->getMock();
+        $obj_request_mock->method('getParam')
+            ->will($this->returnValueMap(
+                [
+                    ['json_param', 'default_value', true, 'param_found'],
+                    ['missing_param', 'default_value', true, 'default_value']
+                ]
+            ));
+
+        $obj_controller = new \JsonParams($obj_request_mock);
         $obj_controller->dispatch();
         $obj_response = $obj_controller->getResponse();
         $this->assertEquals('param_found', $obj_response['json_param']);
         $this->assertEquals('default_value', $obj_response['missing_param']);
     }
 
-    public function testIsPost() {
+    public function testIsPost()
+    {
         $_SERVER['REQUEST_METHOD'] = 'POST';
-        $obj_controller = new ProtectedFunctions();
+        $obj_controller = new ProtectedFunctions(new Request());
         $this->assertTrue($obj_controller->getIsPost());
     }
 }

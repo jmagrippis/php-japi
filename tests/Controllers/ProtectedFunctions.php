@@ -2,13 +2,13 @@
 
 class ProtectedFunctions extends \Docnet\JAPI\Controller
 {
-
-    public function dispatch(){
+    public function dispatch()
+    {
         $this->setResponse(true);
     }
 
-
-    public function getIsPost() {
-        return $this->isPost();
+    public function getIsPost()
+    {
+        return $this->getRequest()->isPost();
     }
 }
