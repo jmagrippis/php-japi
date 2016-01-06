@@ -18,22 +18,57 @@ class Request
     protected $str_json = null;
 
     /**
-     * Was there an HTTP POST?
+     * $_GET and any overrides
      *
-     * Realistically, we're probably not going to use PUT, DELETE (for now)
-     *
-     * @return bool
+     * @var array
      */
-    public final function isPost()
+    protected $arr_get;
+
+    /**
+     * $_POST and any overrides
+     *
+     * @var array
+     */
+    protected $arr_post;
+
+    /**
+     * Create a Request object containing all auth request params
+     *
+     * @todo Review constructor with team. No longer sufficient representation.
+     * @todo Add METHOD When needed.
+     *
+     * @param array $arr_get
+     * @param array $arr_post
+     */
+    public function __construct(array $arr_get = null, array $arr_post = null)
     {
-        return ($_SERVER['REQUEST_METHOD'] === 'POST');
+        $this->arr_get = is_array($arr_get) ? array_merge($_GET, $arr_get) : $_GET;
+        $this->arr_post = is_array($arr_post) ? array_merge($_POST, $arr_post) : $_POST;
     }
 
     /**
-     * Get the HTTP request headers
+     * Determine if current request uses GET method
      *
-     * getallheaders() available for CGI (in addition to Apache) from PHP 5.4
+     * @return bool
+     */
+    public function isPost()
+    {
+        return 'POST' === $this->getMethod();
+    }
+
+    /**
+     * Determine if current request uses GET method
      *
+     * @return bool
+     */
+    public function isGet()
+    {
+        return 'GET' === $this->getMethod();
+    }
+
+    /**
+     * Get the HTTP request headers     *
+     * getallheaders() available for CGI (in addition to Apache) from PHP 5.4     *
      * Fall back to manual processing of $_SERVER if needed
      *
      * @todo Test on Google App Engine
@@ -86,11 +121,11 @@ class Request
      * Get a request parameter. Check GET then POST data, then optionally any json body data.
      *
      * @param string $str_key
-     * @param mixed $str_default
-     * @param bool $check_json_body
+     * @param mixed $mix_default
+     * @param bool $bol_check_json_body
      * @return mixed
      */
-    public function getParam($str_key, $str_default = null, $check_json_body = false)
+    public function getParam($str_key, $mix_default = null, $bol_check_json_body = false)
     {
         $str_query = $this->getQuery($str_key);
         if (null !== $str_query) {
@@ -101,35 +136,45 @@ class Request
             return $str_post;
         }
         // Optionally check Json in Body
-        if ($check_json_body && isset($this->getJson()->$str_key)) {
+        if ($bol_check_json_body && isset($this->getJson()->$str_key)) {
             if (null !== $this->getJson()->$str_key) {
                 return $this->getJson()->$str_key;
             }
         }
-        return $str_default;
+        return $mix_default;
     }
 
     /**
      * Get a Query/GET input parameter
      *
      * @param string $str_key
-     * @param mixed $str_default
+     * @param mixed $mix_default
      * @return mixed
      */
-    public function getQuery($str_key, $str_default = null)
+    public function getQuery($str_key, $mix_default = null)
     {
-        return (isset($_GET[$str_key]) ? $_GET[$str_key] : $str_default);
+        return (isset($_GET[$str_key]) ? $_GET[$str_key] : $mix_default);
     }
 
     /**
      * Get a POST parameter
      *
      * @param string $str_key
-     * @param mixed $str_default
+     * @param mixed $mix_default
      * @return mixed
      */
-    public function getPost($str_key, $str_default = null)
+    public function getPost($str_key, $mix_default = null)
     {
-        return (isset($_POST[$str_key]) ? $_POST[$str_key] : $str_default);
+        return (isset($_POST[$str_key]) ? $_POST[$str_key] : $mix_default);
+    }
+
+    /**
+     * Get request method
+     *
+     * @return string
+     */
+    public function getMethod()
+    {
+        return $_SERVER['REQUEST_METHOD'];
     }
 }
